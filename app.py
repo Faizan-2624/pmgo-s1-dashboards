@@ -122,3 +122,40 @@ st.dataframe(
     filtered_players_df.sort_values("Elims", ascending=False),
     use_container_width=True
 )
+st.divider()
+st.header("Map Performance — Grand Finals")
+
+maps_df = pd.read_csv("data/map_performance_clean.csv")
+
+selected_map = st.selectbox("Select a map", maps_df["Map"].unique())
+map_filtered = maps_df[maps_df["Map"] == selected_map].sort_values("Total Points", ascending=False)
+
+# --- Best team on this map ---
+best_team = map_filtered.iloc[0]
+st.metric(f"Top team on {selected_map}", best_team["Participant"], f"{best_team['Total Points']} pts")
+
+# --- Bar chart: Total Points by team, for selected map ---
+fig5 = px.bar(
+    map_filtered.sort_values("Total Points", ascending=True),
+    x="Total Points",
+    y="Participant",
+    orientation="h",
+    title=f"Team Points on {selected_map}",
+    hover_data=["Avg Placement", "Avg Elims", "Matches Played"]
+)
+st.plotly_chart(fig5, use_container_width=True)
+
+# --- Compare average placement vs average elims across maps ---
+st.subheader("Average Elims by Map (Top 10 Teams)")
+top10_teams = maps_df.groupby("Participant")["Total Points"].sum().nlargest(10).index
+compare_df = maps_df[maps_df["Participant"].isin(top10_teams)]
+
+fig6 = px.bar(
+    compare_df,
+    x="Participant",
+    y="Avg Elims",
+    color="Map",
+    barmode="group",
+    title="Average Elims per Map — Top 10 Teams"
+)
+st.plotly_chart(fig6, use_container_width=True)
