@@ -159,3 +159,72 @@ fig6 = px.bar(
     title="Average Elims per Map — Top 10 Teams"
 )
 st.plotly_chart(fig6, use_container_width=True)
+st.divider()
+st.header("Advanced Stats — Grand Finals")
+
+team_adv_df = pd.read_csv("data/team_advanced_stats_clean.csv")
+player_adv_df = pd.read_csv("data/player_advanced_stats_clean.csv")
+
+tab1, tab2 = st.tabs(["Team Advanced Stats", "Player Advanced Stats"])
+
+with tab1:
+    metric_choice = st.selectbox(
+        "Compare teams by:",
+        ["Damage Dealt", "Damage Received", "Healing Done", "Headshots", "Knocks", "Distance Traveled"]
+    )
+    fig7 = px.bar(
+        team_adv_df.sort_values(metric_choice, ascending=True),
+        x=metric_choice,
+        y="Team",
+        orientation="h",
+        title=f"Team {metric_choice}"
+    )
+    st.plotly_chart(fig7, use_container_width=True)
+
+    st.dataframe(team_adv_df.sort_values("Rank"), use_container_width=True)
+
+with tab2:
+    selected_player = st.selectbox("Select a player", sorted(player_adv_df["Player"].unique()))
+    
+    player_row = player_adv_df[player_adv_df["Player"] == selected_player].iloc[0]
+    
+    st.subheader(f"{selected_player} — {player_row['Team']}")
+    
+    pcol1, pcol2, pcol3, pcol4 = st.columns(4)
+    pcol1.metric("Elims", int(player_row["Elims"]))
+    pcol2.metric("KD Ratio", player_row["KD Ratio"])
+    pcol3.metric("Avg Dmg Dealt", int(player_row["Avg Dmg Dealt"]))
+    pcol4.metric("Headshots", int(player_row["Headshots"]))
+    
+    # Pick the stats worth comparing visually (skip IDs and things that don't make sense on one scale)
+    stat_cols = [
+        "Elims", "Assists", "Knocks", "Headshots", "Deaths",
+        "Smokes Used", "Grenades Used", "Grenade Elims",
+        "Teammates Rescued" if "Teammates Rescued" in player_adv_df.columns else None,
+        "Airdrops Taken"
+    ]
+    stat_cols = [c for c in stat_cols if c is not None]
+    
+    stats_chart_df = pd.DataFrame({
+        "Stat": stat_cols,
+        "Value": [player_row[c] for c in stat_cols]
+    })
+    
+    fig8 = px.bar(
+        stats_chart_df,
+        x="Stat",
+        y="Value",
+        title=f"{selected_player}'s Match Stats"
+    )
+    st.plotly_chart(fig8, use_container_width=True)
+    
+    # Distance stats separately since they're on a totally different scale (meters vs counts)
+    st.subheader("Distance Covered")
+    dist_df = pd.DataFrame({
+        "Type": ["Driven", "Walked", "Traveled"],
+        "Distance": [player_row["Distance Driven"], player_row["Distance Walked"], player_row["Distance Traveled"]]
+    })
+    fig9 = px.bar(dist_df, x="Type", y="Distance", title=f"{selected_player}'s Distance (meters)")
+    st.plotly_chart(fig9, use_container_width=True)
+    
+    st.dataframe(player_adv_df.sort_values("Elims", ascending=False), use_container_width=True)
