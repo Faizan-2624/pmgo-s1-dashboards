@@ -82,3 +82,43 @@ fig3 = px.line(
 )
 fig3.update_layout(xaxis=dict(dtick=1))
 st.plotly_chart(fig3, use_container_width=True)
+st.divider()
+st.header("Player Stats — Grand Finals")
+
+players_df = pd.read_csv("data/player_stats_clean.csv")
+
+# --- Team filter ---
+all_teams_p = ["All Teams"] + sorted(players_df["Team"].unique().tolist())
+selected_team = st.selectbox("Filter by team", all_teams_p)
+
+if selected_team != "All Teams":
+    filtered_players_df = players_df[players_df["Team"] == selected_team]
+else:
+    filtered_players_df = players_df
+
+# --- Stat cards ---
+pcol1, pcol2, pcol3 = st.columns(3)
+top_fragger = filtered_players_df.loc[filtered_players_df["Elims"].idxmax()]
+best_kd = filtered_players_df.loc[filtered_players_df["KD Ratio"].idxmax()]
+pcol1.metric("Players Shown", len(filtered_players_df))
+pcol2.metric("Top Fragger", f"{top_fragger['Player']} ({top_fragger['Elims']})")
+pcol3.metric("Best KD Ratio", f"{best_kd['Player']} ({best_kd['KD Ratio']})")
+
+# --- Top 10 Elims chart ---
+top10_elims = filtered_players_df.sort_values("Elims", ascending=False).head(10)
+fig4 = px.bar(
+    top10_elims.sort_values("Elims", ascending=True),
+    x="Elims",
+    y="Player",
+    orientation="h",
+    title="Top 10 Fraggers (Eliminations)",
+    hover_data=["Team", "KD Ratio"]
+)
+st.plotly_chart(fig4, use_container_width=True)
+
+# --- Full player table ---
+st.subheader("All Players")
+st.dataframe(
+    filtered_players_df.sort_values("Elims", ascending=False),
+    use_container_width=True
+)
