@@ -58,3 +58,27 @@ st.dataframe(
     use_container_width=True,
     hide_index=True
 )
+st.divider()
+st.subheader("Points Progression Across Games")
+
+games_df = pd.read_csv("data/games_long_clean.csv")
+
+all_teams = games_df["Participant"].unique().tolist()
+selected_teams = st.multiselect(
+    "Select teams to compare",
+    options=all_teams,
+    default=["4Thrives", "ULF Esports", "FURIA"]  # top 3 as a sensible default
+)
+
+filtered_games_df = games_df[games_df["Participant"].isin(selected_teams)]
+
+fig3 = px.line(
+    filtered_games_df,
+    x="Game",
+    y="Cumulative Points",
+    color="Participant",
+    title="Cumulative Points by Game (Grand Finals)",
+    markers=True
+)
+fig3.update_layout(xaxis=dict(dtick=1))
+st.plotly_chart(fig3, use_container_width=True)
