@@ -321,3 +321,48 @@ fig12.update_layout(plot_bgcolor="#1B1F1C", paper_bgcolor="#1B1F1C", font_color=
 st.plotly_chart(fig12, use_container_width=True)
 
 st.dataframe(team_stages.drop(columns=["Rank"]), use_container_width=True)
+st.divider()
+st.header("Player Performance Across Stages")
+
+all_players_basic = pd.read_csv("data/all_stages_players_basic.csv")
+
+selected_player2 = st.selectbox(
+    "Select a player",
+    sorted(all_players_basic["Player"].unique()),
+    key="player_stage_select"
+)
+player_journey = all_players_basic[all_players_basic["Player"] == selected_player2].copy()
+
+stage_order_full = ["Group A", "Group B", "Survival Stage", "Grand Finals"]
+player_journey["Stage"] = pd.Categorical(player_journey["Stage"], categories=stage_order_full, ordered=True)
+player_journey = player_journey.sort_values("Stage")
+
+team_name = player_journey.iloc[0]["Team"]
+stages_played = player_journey["Stage"].tolist()
+
+st.subheader(f"{selected_player2} — {team_name}")
+st.caption(f"Competed in: {', '.join(stages_played)}")
+
+metric_choice3 = st.selectbox(
+    "Compare which stat across stages?",
+    ["Elims", "Avg Dmg Dealt", "Assists", "Knocks", "KD Ratio"],
+    key="player_metric_select"
+)
+
+fig13 = px.line(
+    player_journey,
+    x="Stage",
+    y=metric_choice3,
+    markers=True,
+    title=f"{selected_player2}'s {metric_choice3} across stages"
+)
+fig13.update_traces(line_color="#E8A33D", marker=dict(size=12))
+fig13.update_layout(
+    plot_bgcolor="#1B1F1C",
+    paper_bgcolor="#1B1F1C",
+    font_color="#EDEAE3",
+    xaxis=dict(categoryorder="array", categoryarray=stage_order_full)
+)
+st.plotly_chart(fig13, use_container_width=True)
+
+st.dataframe(player_journey.drop(columns=["Team"]), use_container_width=True)
