@@ -2,6 +2,16 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# --- Shared visual theme ---
+PUBG_COLORS = {
+    "bg": "#1B1F1C",
+    "gold": "#E8A33D",
+    "teal": "#3E8E7E",
+    "red": "#C1440E",
+    "text": "#EDEAE3",
+}
+STAGE_COLOR_SEQ = ["#3E8E7E", "#E8A33D", "#C1440E"]  # Group A/B, Survival, Grand Finals feel
+
 st.set_page_config(page_title="PMGO S1 Dashboard", layout="wide", page_icon="🎮")
 
 # Load data
@@ -228,3 +238,56 @@ with tab2:
     st.plotly_chart(fig9, use_container_width=True)
     
     st.dataframe(player_adv_df.sort_values("Elims", ascending=False), use_container_width=True)
+st.divider()
+st.header("Tournament Journey — Group Stage to Survival Stage")
+
+stage_df = pd.read_csv("data/stage_standings_clean.csv")
+
+STAGE_COLORS = {"Group A": "#3E8E7E", "Group B": "#5DA396", "Survival Stage": "#E8A33D"}
+stage_order = ["Group A", "Group B", "Survival Stage"]
+
+# --- Journey chart: one line per team, dots per stage reached ---
+journey_source = stage_df.copy()
+journey_source["Stage"] = pd.Categorical(journey_source["Stage"], categories=stage_order, ordered=True)
+journey_source = journey_source.sort_values(["Team", "Stage"])
+
+fig10 = px.scatter(
+    journey_source,
+    x="Stage",
+    y="Team",
+    size="Total Points",
+    color="Stage",
+    color_discrete_map=STAGE_COLORS,
+    title="Team Journey: who advanced, and how they scored",
+    hover_data=["Place Points", "Elim Points", "Chicken Dinners"]
+)
+fig10.update_traces(marker=dict(line=dict(width=1, color="#1B1F1C")))
+fig10.update_layout(
+    plot_bgcolor="#1B1F1C",
+    paper_bgcolor="#1B1F1C",
+    font_color="#EDEAE3",
+    yaxis=dict(categoryorder="total ascending", gridcolor="#333A35"),
+    xaxis=dict(gridcolor="#333A35"),
+    height=600
+)
+st.plotly_chart(fig10, use_container_width=True)
+
+st.caption("Dot size = total points that stage. Teams missing a dot were eliminated before reaching it.")
+
+# --- Stage-specific standings (secondary view) ---
+selected_stage = st.selectbox("View full standings for a stage", stage_order)
+stage_filtered = stage_df[stage_df["Stage"] == selected_stage].sort_values("Total Points", ascending=False)
+
+fig11 = px.bar(
+    stage_filtered.sort_values("Total Points", ascending=True),
+    x="Total Points",
+    y="Team",
+    orientation="h",
+    color_discrete_sequence=[STAGE_COLORS[selected_stage]],
+    title=f"{selected_stage} Standings",
+    hover_data=["Place Points", "Elim Points", "Chicken Dinners"]
+)
+fig11.update_layout(plot_bgcolor="#1B1F1C", paper_bgcolor="#1B1F1C", font_color="#EDEAE3")
+st.plotly_chart(fig11, use_container_width=True)
+
+st.dataframe(stage_filtered, use_container_width=True)
