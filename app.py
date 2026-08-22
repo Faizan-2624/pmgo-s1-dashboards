@@ -291,3 +291,33 @@ fig11.update_layout(plot_bgcolor="#1B1F1C", paper_bgcolor="#1B1F1C", font_color=
 st.plotly_chart(fig11, use_container_width=True)
 
 st.dataframe(stage_filtered, use_container_width=True)
+st.divider()
+st.header("Team Stage Comparison")
+
+all_team_adv = pd.read_csv("data/all_stages_team_advanced.csv")
+
+compare_team = st.selectbox("Select a team to compare across stages", sorted(all_team_adv["Team"].unique()))
+team_stages = all_team_adv[all_team_adv["Team"] == compare_team]
+
+metric_choice2 = st.selectbox(
+    "Compare which stat across stages?",
+    ["Total Points", "Damage Dealt", "Damage Received", "Healing Done", "Knocks", "Headshots", "Distance Traveled"]
+)
+
+stage_order_full = ["Group A", "Group B", "Survival Stage", "Grand Finals"]
+team_stages = team_stages.copy()
+team_stages["Stage"] = pd.Categorical(team_stages["Stage"], categories=stage_order_full, ordered=True)
+team_stages = team_stages.sort_values("Stage")
+
+fig12 = px.line(
+    team_stages,
+    x="Stage",
+    y=metric_choice2,
+    markers=True,
+    title=f"{compare_team} — {metric_choice2} across stages"
+)
+fig12.update_traces(line_color="#E8A33D", marker=dict(size=10))
+fig12.update_layout(plot_bgcolor="#1B1F1C", paper_bgcolor="#1B1F1C", font_color="#EDEAE3")
+st.plotly_chart(fig12, use_container_width=True)
+
+st.dataframe(team_stages.drop(columns=["Rank"]), use_container_width=True)
